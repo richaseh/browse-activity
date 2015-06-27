@@ -286,6 +286,9 @@ class PrimaryToolbar(ToolbarBase):
         'set-home': (GObject.SignalFlags.RUN_FIRST, None, ([])),
         'reset-home': (GObject.SignalFlags.RUN_FIRST, None, ([])),
         'go-library': (GObject.SignalFlags.RUN_FIRST, None, ([])),
+        'go-webconsole': (GObject.SignalFlags.RUN_FIRST, None, ([])),
+        'save-file-webconsole': (GObject.SignalFlags.RUN_FIRST, None, ([])),
+        'open-file-webconsole': (GObject.SignalFlags.RUN_FIRST, None, ([])),
     }
 
     def __init__(self, tabbed_view, act):
@@ -402,6 +405,27 @@ class PrimaryToolbar(ToolbarBase):
         self._toolbar_separator = Gtk.SeparatorToolItem()
         self._toolbar_separator.props.draw = False
         self._toolbar_separator.set_expand(True)
+
+        #adding a button for Web Console
+        self._go_webconsole = ToolButton('go_webconsole')
+        self._go_webconsole.set_tooltip(_('Open Web Console'))
+        self._go_webconsole.connect('clicked', self._go_webconsole_cb)
+        # add a menu to save the web console input.
+        webconsole_menu_box = PaletteMenuBox()
+        self._go_webconsole.props.palette.set_content(webconsole_menu_box)
+        save_file = PaletteMenuItem()
+        save_file.set_label(_('Save File'))
+        save_file.connect('activate', self._save_file_webconsole_cb)
+        webconsole_menu_box.append_item(save_file)
+        # add a menu to save the web console input.
+        open_file = PaletteMenuItem()
+        open_file.set_label(_('Open File'))
+        open_file.connect('activate', self._open_file_webconsole_cb)
+        webconsole_menu_box.append_item(open_file)
+
+        webconsole_menu_box.show_all()
+        toolbar.insert(self._go_webconsole, -1)
+        self._go_webconsole.show()
 
         stop_button = StopButton(self._activity)
         toolbar.insert(stop_button, -1)
@@ -613,6 +637,15 @@ class PrimaryToolbar(ToolbarBase):
     def _reset_home_cb(self, button):
         self._reset_home_menu.set_visible(False)
         self.emit('reset-home')
+
+    def _go_webconsole_cb(self, button):
+        self.emit('go-webconsole')
+
+    def _save_file_webconsole_cb(self, button):
+        self.emit('save-file-webconsole')
+
+    def _open_file_webconsole_cb(self, button):
+        self.emit('open-file-webconsole')
 
     def _go_back_cb(self, button):
         self._browser.go_back()
