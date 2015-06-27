@@ -123,6 +123,7 @@ from browser import ZOOM_ORIGINAL
 from webtoolbar import PrimaryToolbar
 from edittoolbar import EditToolbar
 from viewtoolbar import ViewToolbar
+from webconsole import WebConsole
 import downloadmanager
 
 # TODO: make the registration clearer SL #3087
@@ -184,6 +185,12 @@ class WebActivity(activity.Activity):
 
         self._primary_toolbar.connect('reset-home', self._reset_home_button_cb)
 
+        self._primary_toolbar.connect('go-webconsole', self._go_webconsole_button_cb)
+
+        self._primary_toolbar.connect('save-file-webconsole', self._save_file_webconsole_button_cb)
+
+        self._primary_toolbar.connect('open-file-webconsole', self._open_file_webconsole_button_cb)
+
         self._edit_toolbar_button = ToolbarButton(
             page=self._edit_toolbar, icon_name='toolbar-edit')
 
@@ -237,6 +244,8 @@ class WebActivity(activity.Activity):
                 self._joined_cb()
         else:
             _logger.debug('Created activity')
+
+        self._web_console = WebConsole(self)
 
         # README: this is a workaround to remove old temp file
         # http://bugs.sugarlabs.org/ticket/3973
@@ -470,6 +479,15 @@ class WebActivity(activity.Activity):
 
     def _go_home_button_cb(self, button):
         self._tabbed_view.load_homepage()
+
+    def _go_webconsole_button_cb(self, button):
+        self._web_console.open_new_tab()
+
+    def _save_file_webconsole_button_cb(self, button):
+        self._web_console.save_file()
+
+    def _open_file_webconsole_button_cb(self, button):
+        self._web_console.open_file()
 
     def _go_library_button_cb(self, button):
         self._tabbed_view.load_homepage(ignore_gconf=True)
