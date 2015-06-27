@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <title></title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container grid">
+      <form>
+        <h3>HTML</h3>
+        <textarea id="html"></textarea>
+        <h3>CSS</h3>
+        <textarea id="css"></textarea>
+        <h3>JavaScript</h3>
+        <textarea id="js"></textarea>
+      </form>
+    </div>
+    <div class="output grid">
+      <h2>Output:</h2>
+      <iframe id="iframe"></iframe>
+    </div>
+    <div id="internal-use-trigger-save-text" style="visibility:hidden;"></div>
+    <textarea id="internal-use-save-text" style="visibility:hidden;"></textarea>
+    <div id="internal-use-trigger-run-text" style="visibility:hidden;"></div>
+    <textarea id="internal-use-run-text" style="visibility:hidden;"></textarea>
+    <script>
+      (function() {
+      // Base template of the iframe.
+      var baseTpl =
+          "<!doctype html>\n" +
+          "<html>\n\t" +
+          "<head>\n\t\t" +
+          "</head>\n\t" +
+          "<body>\n\t\n\t" +
+          "<h3>Console:</h3>\n" +
+          "<div style=\"padding: 0 5x; margin-bottom: 10px; border: 1px solid black; width: 100%; height: 100px\" id=\"console\"></div>\n" +
+          "</body>\n" +
+          "</html>";
+
+      var baseTplNoConsole =
+          "<!doctype html>\n" +
+          "<html>\n\t" +
+          "<head>\n\t\t" +
+          "</head>\n\t" +
+          "<body>" +
+          "</body>\n" +
+          "</html>";
+
+      var consoleTpl =
+          "var console = {};\n" +
+          "console.log = function(s) {\n" +
+            "var para = document.createElement(\"p\");\n" +
+            "para.style.marginTop = \"5px\";\n" +
+            "para.style.marginBottom = \"5px\";\n" +
+            "var node = document.createTextNode(s);\n" +
+            "para.appendChild(node);\n" +
+            "var consoleDiv = document.getElementById('console');\n" +
+            "consoleDiv.appendChild(para);\n" +
+          "};\n" +
+          "console.error = function(s) {\n" +
+            "var para = document.createElement(\"p\");\n" +
+            "para.style.color = 'red';\n" +
+            "para.style.marginTop = \"5px\";\n" +
+            "para.style.marginBottom = \"5px\";\n" +
+            "var node = document.createTextNode(s);\n" +
+            "para.appendChild(node);\n" +
+            "var consoleDiv = document.getElementById('console');\n" +
+            "consoleDiv.appendChild(para);\n" +
+          "};";
+
+      // This function fills the base content of the iframe with that
+      // input by the user.
+      var fillTemplateContent = function(addConsole) {
+          // Get the Input elements.
+          var htmlInput = document.querySelector('#html'),
+              cssInput = document.querySelector('#css'),
+              jsInput = document.querySelector('#js');
+
+          // Get the input values.
+          var html = htmlInput.value,
+              css = cssInput.value,
+              js = jsInput.value,
+              content = '';
+       
+          // HTML
+          if (addConsole) {
+            content = baseTpl.replace('</body>', html + '</body>');
+          } else {
+            content = baseTplNoConsole.replace('</body>', html + '</body>');
+          }
+       
+          // CSS
+          css = '<style>' + css + '</style>';
+          content = content.replace('<head>', '<head>' + css);
+        
+          // Javascript
+          // We escape the closing script tag so that the browser parsing is
+          // not messed up.
+          if (addConsole) {
+            js = '<script>window.onload = function() {' + js + '};<\/script>';
+          } else {
+            js = '<script>' + js + '<\/script>';
+          }
+          content = content.replace('<head>', '<head>' + js);
+        
+          // Console
+          if (addConsole) {
+            var consoleDiv = '<script>' + consoleTpl + '<\/script>';
+            content = content.replace('<head>', '<head>' + consoleDiv);
+          }
+
+          return content;
+      };
+      
+      // This renders the content in the iframe.
+      var render = function() {
+          var iframeContent = fillTemplateContent(true);
+       
+          var iframe = document.querySelector('#iframe'),
+              iframeDocument = iframe.contentDocument;
+
+          // Note: write() in general is not recommended to use.
+          // This is OK for quick prototype, but should not be used in
+          // production code.
+          iframeDocument.open();
+          iframeDocument.write(iframeContent);
+          iframeDocument.close();
+      };
+
+      // Add a click event listener to the saveTextBtn button.
+      var saveTextBtn = document.querySelector('#internal-use-trigger-save-text');
+      saveTextBtn.addEventListener('click', function() {
+        var savedText = fillTemplateContent(false);
+        var savedTextDiv = document.querySelector('#internal-use-save-text');
+        savedTextDiv.value = savedText;
+      });
+
+      var runTextBtn = document.querySelector('#internal-use-trigger-run-text');
+      runTextBtn.addEventListener('click', function() {
+        var runText = fillTemplateContent(true);
+        var runTextDiv = document.querySelector('#internal-use-run-text');
+        runTextDiv.value = runText;
+      });
+      
+      // We initially call render so that Console comes.
+      render();
+      }());
+    </script>
+  </body>
+</html>
