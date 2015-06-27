@@ -1,0 +1,36 @@
+textarea {
+  width: 100%;
+  margin: 10px auto 10px;
+  height: 100px;
+  border-color: black;
+}
+.btn.grid {
+  width: 20%;
+  margin: 50px;
+  background-color: lightgrey;
+  border: 2px solid;
+  border-radius: 2px;
+  border-color: black;
+  cursor: pointer;
+  font-size: 25px;
+}
+.container {
+  background: lightgrey;
+}
+.grid {
+  float: left;
+  padding: 10px 50px;
+  width: 50%;
+  overflow: hidden;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.output {
+  overflow: hidden;
+}
+.output iframe {
+  border: none !important;
+  width: 100%;
+  height: 580px;
+}

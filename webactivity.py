@@ -38,6 +38,8 @@ from gi.repository import GConf
 import cairo
 import StringIO
 from hashlib import sha1
+from path import path
+from subprocess import call, Popen, PIPE
 
 from sugar3.activity import activity
 from sugar3.graphics import style
@@ -129,6 +131,7 @@ from browser import ZOOM_ORIGINAL
 from webtoolbar import PrimaryToolbar
 from edittoolbar import EditToolbar
 from viewtoolbar import ViewToolbar
+from webconsole import WebConsole
 import downloadmanager
 
 # TODO: make the registration clearer SL #3087
@@ -190,6 +193,16 @@ class WebActivity(activity.Activity):
 
         self._primary_toolbar.connect('reset-home', self._reset_home_button_cb)
 
+        self._primary_toolbar.connect('go-webconsole', self._go_webconsole_button_cb)
+
+        self._primary_toolbar.connect('save-file-webconsole', self._save_file_webconsole_button_cb)
+
+        self._primary_toolbar.connect('open-file-webconsole', self._open_file_webconsole_button_cb)
+
+        self._primary_toolbar.connect('run-webconsole', self._run_webconsole_button_cb)
+
+        self._primary_toolbar.connect('add-image-webconsole', self._add_image_webconsole_button_cb)
+
         self._edit_toolbar_button = ToolbarButton(
             page=self._edit_toolbar, icon_name='toolbar-edit')
 
@@ -213,7 +226,11 @@ class WebActivity(activity.Activity):
         self.connect('key-press-event', self._key_press_cb)
 
         if handle.uri:
-            self._tabbed_view.current_browser.load_uri(handle.uri)
+          if 'zip' in handle.uri:
+            file_uri = self._zip_setup(handle.uri)
+          else:
+            file_uri = handle.uri
+            self._tabbed_view.current_browser.load_uri(file_uri)
         elif not self._jobject.file_path:
             # TODO: we need this hack until we extend the activity API for
             # opening URIs and default docs.
@@ -243,6 +260,8 @@ class WebActivity(activity.Activity):
                 self._joined_cb()
         else:
             _logger.debug('Created activity')
+
+        self._web_console = WebConsole(self)
 
         # README: this is a workaround to remove old temp file
         # http://bugs.sugarlabs.org/ticket/3973
@@ -428,10 +447,30 @@ class WebActivity(activity.Activity):
             else:
                 _logger.error('Open uri-list: Does not support'
                               'list of multiple uris by now.')
+        elif self.metadata['mime_type'] == 'application/zip': #unzip and set uri
+            file_uri = self._zip_setup(file_path)
+            self._tabbed_view.props.current_browser.load_uri(file_uri)
+            self._tabbed_view.props.current_browser.grab_focus()
         else:
             file_uri = 'file://' + file_path
             self._tabbed_view.props.current_browser.load_uri(file_uri)
             self._tabbed_view.props.current_browser.grab_focus()
+
+    def _zip_setup(self,file_path):
+      temp_path = path(os.path.join(self.get_activity_root(), 'instance'))
+      call('rm -rf temp_path/*', shell=True)
+      cmd = 'unzip  ' + file_path
+      call(cmd, cwd=temp_path, shell=True)
+      files = temp_path.files('*.html')
+      if not files:
+        dirs = temp_path.dirs()
+        if dirs:
+          files = dirs[0].files('*.html')
+      if files and 'index.html' in files:
+        file_path = files[0].parent + 'index.html'
+      elif files:
+        file_path = files[0]
+      return 'file://' + file_path
 
     def write_file(self, file_path):
         if not self.metadata['mime_type']:
@@ -476,6 +515,21 @@ class WebActivity(activity.Activity):
 
     def _go_home_button_cb(self, button):
         self._tabbed_view.load_homepage()
+
+    def _go_webconsole_button_cb(self, button):
+        self._web_console.open_new_tab()
+
+    def _save_file_webconsole_button_cb(self, button):
+        self._web_console.save_file()
+
+    def _open_file_webconsole_button_cb(self, button):
+        self._web_console.open_file()
+
+    def _run_webconsole_button_cb(self, button):
+        self._web_console.run()
+
+    def _add_image_webconsole_button_cb(self, button):
+        self._web_console.add_image()
 
     def _go_library_button_cb(self, button):
         self._tabbed_view.load_homepage(ignore_gconf=True)
